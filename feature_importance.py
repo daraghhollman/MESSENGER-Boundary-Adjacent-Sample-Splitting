@@ -8,23 +8,10 @@ from sklearn.metrics import (ConfusionMatrixDisplay, accuracy_score,
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
-
-class bcolors:
-    HEADER = "\033[95m"
-    OKBLUE = "\033[94m"
-    OKCYAN = "\033[96m"
-    OKGREEN = "\033[92m"
-    WARNING = "\033[93m"
-    FAIL = "\033[91m"
-    ENDC = "\033[0m"
-    BOLD = "\033[1m"
-    UNDERLINE = "\033[4m"
-
-
 show_plots = False
 
 # Load data
-combined_features = pd.read_csv("./combined_features.csv")
+combined_features = pd.read_csv("/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv")
 
 X = combined_features.drop(columns=["label"])  # Features
 
@@ -80,15 +67,18 @@ if show_plots:
     plt.show()
 
 
+print(X_test)
+print(y_test)
+
 if input("Save predictions to csv? [Y/n]\n > ") != "n":
-    truths = combined_features["label"].tolist()  # What the correct label is
+    truths = y_test  # What the correct label is
     predictions = []  # What the random forest predicted
     sheath_probability = []  # probability it is sheath
     solar_wind_probability = []  # probability it is solar wind
 
     # Create dataframe of how well the random forest performed
-    for i in tqdm(range(len(X))):
-        sample = X.iloc[i].to_frame().T
+    for i in tqdm(range(len(X_test))):
+        sample = X_test.iloc[i].to_frame().T
 
         prediction = random_forest.predict(sample)[0]
         probabilities = random_forest.predict_proba(sample)

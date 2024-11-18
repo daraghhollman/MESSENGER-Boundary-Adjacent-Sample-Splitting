@@ -1,0 +1,157 @@
+"""
+Script to index a list of random forest outputs and plot the time series and distrbution.
+"""
+
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import numpy as np
+import pandas as pd
+
+
+def main():
+    colours = ["#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"]
+
+    # Load the csv files
+    magnetosheath_samples = pd.read_csv(
+        "/home/daraghhollman/Main/Work/mercury/DataSets/magnetosheath_sample_10_mins.csv"
+    )
+    solar_wind_samples = pd.read_csv(
+        "/home/daraghhollman/Main/Work/mercury/DataSets/solar_wind_sample_10_mins.csv"
+    )
+
+    total_samples = pd.concat((solar_wind_samples, magnetosheath_samples))
+
+    components = ["|B|", "B_x", "B_y", "B_z"]
+    for component in components:
+        total_samples[component] = total_samples[component].apply(
+            lambda x: list(map(float, x.strip("[]").split(",")))
+        )
+
+    results = pd.read_csv(
+        "/home/daraghhollman/Main/Work/mercury/DataSets/random_forest_predictions.csv"
+    )
+
+    # results = results.loc[ abs(results["P(Solar Wind)"] - results["P(Magnetosheath)"]) >= 0.9 ]
+    results = results.loc[results["Truth"] == "Magnetosheath"]
+    # results = results.loc[results["Truth"] != results["Prediction"]]
+
+    for i, row in results.iterrows():
+
+        selected_result = row
+
+        # We create two axes side-by-side
+        # and afterwards, we add an axis below to represent the probability
+        fig = plt.figure()
+
+        histogram_axis = plt.subplot(2, 2, 1)
+        mag_axis = plt.subplot(2, 2, 2)
+        probability_axis = plt.subplot(2, 1, 2)
+
+        histogram_axis.hist(
+            total_samples.iloc[i]["|B|"],
+            color="black",
+            orientation="horizontal",
+            alpha=0.5,
+        )
+        histogram_axis.hist(
+            total_samples.iloc[i]["B_x"],
+            color=colours[2],
+            orientation="horizontal",
+            alpha=0.5,
+        )
+        histogram_axis.hist(
+            total_samples.iloc[i]["B_y"],
+            color=colours[0],
+            orientation="horizontal",
+            alpha=0.5,
+        )
+        histogram_axis.hist(
+            total_samples.iloc[i]["B_z"],
+            color=colours[-1],
+            orientation="horizontal",
+            alpha=0.5,
+        )
+        mag_axis.sharey(histogram_axis)
+
+        mag_axis.plot(
+            np.arange(0, len(total_samples.iloc[i]["|B|"])),
+            total_samples.iloc[i]["|B|"],
+            color="black",
+            lw=1,
+            label="|B|",
+        )
+        mag_axis.plot(
+            np.arange(0, len(total_samples.iloc[i]["|B|"])),
+            total_samples.iloc[i]["B_x"],
+            color=colours[2],
+            alpha=0.5,
+            lw=0.8,
+            label="Bx",
+        )
+        mag_axis.plot(
+            np.arange(0, len(total_samples.iloc[i]["|B|"])),
+            total_samples.iloc[i]["B_y"],
+            color=colours[0],
+            alpha=0.5,
+            lw=0.8,
+            label="By",
+        )
+        mag_axis.plot(
+            np.arange(0, len(total_samples.iloc[i]["|B|"])),
+            total_samples.iloc[i]["B_z"],
+            color=colours[-1],
+            alpha=0.5,
+            lw=0.8,
+            label="Bz",
+        )
+
+        mag_leg = mag_axis.legend(
+            bbox_to_anchor=(0.5, 1.1), loc="center", ncol=4, borderaxespad=0.5
+        )
+
+        mag_axis.set_xlabel("Seconds")
+        histogram_axis.set_xlabel("# Seconds")
+        histogram_axis.set_ylabel("Field Strength [nT]")
+
+        Number_Line(probability_axis)
+        probability_axis.xaxis.set_major_locator(ticker.MultipleLocator(0.1))
+        probability_axis.xaxis.set_minor_locator(ticker.MultipleLocator(0.01))
+
+        probability_axis.scatter(
+            selected_result["P(Solar Wind)"], 0, color="indianred", zorder=5
+        )
+
+        probability_axis.set_xlabel("Solar Wind Sample Probability")
+        probability_axis.text(
+            1.05, 0, "Solar Wind", va="center", ha="center", rotation=90
+        )
+        probability_axis.text(
+            -0.05, 0, "Magnetosheath", va="center", ha="center", rotation=90
+        )
+
+        fig.suptitle(
+            f"Truth: {selected_result['Truth']}    Prediction: {selected_result['Prediction']}"
+        )
+
+        plt.show()
+
+
+# https://matplotlib.org/2.0.2/examples/ticks_and_spines/tick-locators.html
+# Setup a plot such that only the bottom spine is shown
+def Number_Line(ax):
+    ax.spines["right"].set_color("none")
+    ax.spines["left"].set_color("none")
+    ax.yaxis.set_major_locator(ticker.NullLocator())
+    ax.spines["top"].set_color("none")
+    ax.xaxis.set_ticks_position("bottom")
+    ax.tick_params(which="major", width=1.00)
+    ax.tick_params(which="major", length=5)
+    ax.tick_params(which="minor", width=0.75)
+    ax.tick_params(which="minor", length=2.5)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(-0.1, 1)
+    ax.patch.set_alpha(0.0)
+
+
+if __name__ == "__main__":
+    main()
