@@ -2,14 +2,23 @@
 Script to index a list of random forest outputs and plot the time series and distrbution.
 """
 
+import datetime as dt
+
+import hermpy.mag as mag
+import hermpy.plotting_tools as hermplot
+import hermpy.boundary_crossings as boundaries
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
+import spiceypy as spice
 
 
 def main():
     colours = ["#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"]
+
+    spice.furnsh("/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt")
+    crossings = boundaries.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020_reformatted.csv")
 
     # Load the csv files
     magnetosheath_samples = pd.read_csv(
@@ -32,12 +41,13 @@ def main():
     )
 
     # results = results.loc[ abs(results["P(Solar Wind)"] - results["P(Magnetosheath)"]) >= 0.9 ]
-    results = results.loc[results["Truth"] == "Magnetosheath"]
+    # results = results.loc[results["Truth"] == "Magnetosheath"]
     # results = results.loc[results["Truth"] != results["Prediction"]]
 
-    for i, row in results.iterrows():
+    for _, row in results.iterrows():
 
         selected_result = row
+        i = row.iloc[0]
 
         # We create two axes side-by-side
         # and afterwards, we add an axis below to represent the probability
@@ -73,6 +83,58 @@ def main():
         )
         mag_axis.sharey(histogram_axis)
 
+        # Plot the area around the sample
+        time_buffer = dt.timedelta(minutes=20)
+
+        try:
+            sample_start = dt.datetime.strptime(total_samples.iloc[i]["sample_start"], "%Y-%m-%d %H:%M:%S.%f")
+            sample_end = dt.datetime.strptime(total_samples.iloc[i]["sample_end"], "%Y-%m-%d %H:%M:%S.%f")
+        except:
+            sample_start = dt.datetime.strptime(total_samples.iloc[i]["sample_start"], "%Y-%m-%d %H:%M:%S")
+            sample_end = dt.datetime.strptime(total_samples.iloc[i]["sample_end"], "%Y-%m-%d %H:%M:%S")
+
+        # Load the new data
+        data = mag.Load_Between_Dates(
+            "/home/daraghhollman/Main/data/mercury/messenger/mag/avg_1_second/",
+            sample_start - time_buffer,
+            sample_end + time_buffer,
+            strip=True
+        )
+
+        mag_axis.plot(
+            data["date"],
+            data["mag_total"],
+            color="black",
+            lw=1,
+            label="|B|",
+        )
+        mag_axis.plot(
+            data["date"],
+            data["mag_x"],
+            color=colours[2],
+            lw=1,
+            label="Bx",
+        )
+        mag_axis.plot(
+            data["date"],
+            data["mag_y"],
+            color=colours[0],
+            lw=1,
+            label="By",
+        )
+        mag_axis.plot(
+            data["date"],
+            data["mag_z"],
+            color=colours[-1],
+            lw=1,
+            label="Bz",
+        )
+
+        mag_axis.axvspan(sample_start, sample_end, color="grey", alpha=0.2)
+        boundaries.Plot_Crossing_Intervals(mag_axis, data["date"].iloc[0], data["date"].iloc[-1], crossings)
+        hermplot.Add_Tick_Ephemeris(mag_axis)
+
+        """
         mag_axis.plot(
             np.arange(0, len(total_samples.iloc[i]["|B|"])),
             total_samples.iloc[i]["|B|"],
@@ -104,6 +166,7 @@ def main():
             lw=0.8,
             label="Bz",
         )
+        """
 
         mag_leg = mag_axis.legend(
             bbox_to_anchor=(0.5, 1.1), loc="center", ncol=4, borderaxespad=0.5

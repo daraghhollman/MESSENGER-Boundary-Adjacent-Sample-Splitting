@@ -2,13 +2,13 @@ import pandas as pd
 
 # Load the feature datasets
 sw_features = pd.read_csv(
-    "/home/daraghhollman/Main/Work/mercury/Code/crossings_study/data_set_creation/solar_wind_features.csv"
+    "/home/daraghhollman/Main/Work/mercury/DataSets/solar_wind_features.csv"
 )
 ms_features = pd.read_csv(
-    "/home/daraghhollman/Main/Work/mercury/Code/crossings_study/data_set_creation/magnetosheath_features.csv"
+    "/home/daraghhollman/Main/Work/mercury/DataSets/magnetosheath_features.csv"
 )
 
-features = ["mean", "median", "std", "skew", "kurtosis", "dip_stat", "dip_p_value", "grazing_angle", "RH", "LT", "Lat", "MLat", "x_msm", "y_msm", "z_msm", "is_inbound"]
+features = ["mean", "median", "std", "skew", "kurtosis", "dip_stat", "dip_p_value", "grazing_angle", "RH", "LT", "Lat", "MLat", "x_msm", "y_msm", "z_msm", "is_inbound", "sample_start", "sample_end"]
 expanded_feature_labels = ["|B|", "Bx", "By", "Bz"]
 
 # Select only the columns we want to keep
@@ -40,4 +40,4 @@ ms_features["label"] = "Magnetosheath"
 
 combined_features = pd.concat([sw_features, ms_features], ignore_index=True)
 
-combined_features.to_csv("./combined_features.csv")
+combined_features.to_csv("/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv")
