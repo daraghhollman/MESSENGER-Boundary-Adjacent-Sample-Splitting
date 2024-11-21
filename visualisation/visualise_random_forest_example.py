@@ -18,7 +18,7 @@ def main():
     colours = ["#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"]
 
     spice.furnsh("/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt")
-    crossings = boundaries.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020_reformatted.csv")
+    crossings = boundaries.Load_Crossings("/home/daraghhollman/Main/Work/mercury/DataSets/philpott_2020.xlsx")
 
     # Load the csv files
     magnetosheath_samples = pd.read_csv(
@@ -40,7 +40,7 @@ def main():
         "/home/daraghhollman/Main/Work/mercury/DataSets/random_forest_predictions.csv"
     )
 
-    # results = results.loc[ abs(results["P(Solar Wind)"] - results["P(Magnetosheath)"]) >= 0.9 ]
+    # results = results.loc[ abs(results["P(Solar Wind)"] - results["P(Magnetosheath)"]) <= 0.5 ]
     # results = results.loc[results["Truth"] == "Magnetosheath"]
     # results = results.loc[results["Truth"] != results["Prediction"]]
 
@@ -61,30 +61,34 @@ def main():
             total_samples.iloc[i]["|B|"],
             color="black",
             orientation="horizontal",
-            alpha=0.5,
+            histtype="step",
+            lw=2,
         )
         histogram_axis.hist(
             total_samples.iloc[i]["B_x"],
             color=colours[2],
             orientation="horizontal",
-            alpha=0.5,
+            histtype="step",
+            lw=2,
         )
         histogram_axis.hist(
             total_samples.iloc[i]["B_y"],
             color=colours[0],
             orientation="horizontal",
-            alpha=0.5,
+            histtype="step",
+            lw=2,
         )
         histogram_axis.hist(
             total_samples.iloc[i]["B_z"],
             color=colours[-1],
             orientation="horizontal",
-            alpha=0.5,
+            histtype="step",
+            lw=2,
         )
         mag_axis.sharey(histogram_axis)
 
         # Plot the area around the sample
-        time_buffer = dt.timedelta(minutes=20)
+        time_buffer = dt.timedelta(minutes=30)
 
         try:
             sample_start = dt.datetime.strptime(total_samples.iloc[i]["sample_start"], "%Y-%m-%d %H:%M:%S.%f")
@@ -103,76 +107,45 @@ def main():
 
         mag_axis.plot(
             data["date"],
-            data["mag_total"],
+            data["|B|"],
             color="black",
             lw=1,
             label="|B|",
+            alpha=0.8,
         )
         mag_axis.plot(
             data["date"],
-            data["mag_x"],
+            data["Bx"],
             color=colours[2],
             lw=1,
             label="Bx",
+            alpha=0.8,
         )
         mag_axis.plot(
             data["date"],
-            data["mag_y"],
+            data["By"],
             color=colours[0],
             lw=1,
             label="By",
+            alpha=0.8,
         )
         mag_axis.plot(
             data["date"],
-            data["mag_z"],
+            data["Bz"],
             color=colours[-1],
             lw=1,
             label="Bz",
+            alpha=0.8,
         )
 
         mag_axis.axvspan(sample_start, sample_end, color="grey", alpha=0.2)
         boundaries.Plot_Crossing_Intervals(mag_axis, data["date"].iloc[0], data["date"].iloc[-1], crossings)
         hermplot.Add_Tick_Ephemeris(mag_axis)
 
-        """
-        mag_axis.plot(
-            np.arange(0, len(total_samples.iloc[i]["|B|"])),
-            total_samples.iloc[i]["|B|"],
-            color="black",
-            lw=1,
-            label="|B|",
-        )
-        mag_axis.plot(
-            np.arange(0, len(total_samples.iloc[i]["|B|"])),
-            total_samples.iloc[i]["B_x"],
-            color=colours[2],
-            alpha=0.5,
-            lw=0.8,
-            label="Bx",
-        )
-        mag_axis.plot(
-            np.arange(0, len(total_samples.iloc[i]["|B|"])),
-            total_samples.iloc[i]["B_y"],
-            color=colours[0],
-            alpha=0.5,
-            lw=0.8,
-            label="By",
-        )
-        mag_axis.plot(
-            np.arange(0, len(total_samples.iloc[i]["|B|"])),
-            total_samples.iloc[i]["B_z"],
-            color=colours[-1],
-            alpha=0.5,
-            lw=0.8,
-            label="Bz",
-        )
-        """
-
-        mag_leg = mag_axis.legend(
+        mag_axis.legend(
             bbox_to_anchor=(0.5, 1.1), loc="center", ncol=4, borderaxespad=0.5
         )
 
-        mag_axis.set_xlabel("Seconds")
         histogram_axis.set_xlabel("# Seconds")
         histogram_axis.set_ylabel("Field Strength [nT]")
 
