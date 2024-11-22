@@ -8,7 +8,26 @@ ms_features = pd.read_csv(
     "/home/daraghhollman/Main/Work/mercury/DataSets/magnetosheath_features.csv"
 )
 
-features = ["mean", "median", "std", "skew", "kurtosis", "dip_stat", "dip_p_value", "grazing_angle", "RH", "LT", "Lat", "MLat", "x_msm", "y_msm", "z_msm", "is_inbound", "sample_start", "sample_end"]
+features = [
+    "Mean",
+    "Median",
+    "Standard Deviation",
+    "Skew",
+    "Kurtosis",
+    "Dip Statistic",
+    "Dip P-Value",
+    "Grazing Angle (deg.)",
+    "Heliocentric Distance (AU)",
+    "Local Time (hrs)",
+    "Latitude (deg.)",
+    "Magnetic Latitude (deg.)",
+    "X MSM' (radii)",
+    "Y MSM' (radii)",
+    "Z MSM' (radii)",
+    "Is Inbound?",
+    "Sample Start",
+    "Sample End",
+]
 expanded_feature_labels = ["|B|", "Bx", "By", "Bz"]
 
 # Select only the columns we want to keep
@@ -25,10 +44,12 @@ for dataset in [sw_features, ms_features]:
         )
 
         # Expand feature lists into new columns
-        expanded_columns = dataset[feature].apply(pd.Series).rename(
-            lambda x: f"{feature} {expanded_feature_labels[x]}", axis=1
+        expanded_columns = (
+            dataset[feature]
+            .apply(pd.Series)
+            .rename(lambda x: f"{feature} {expanded_feature_labels[x]}", axis=1)
         )
-        
+
         # Assign new columns back to the original dataset
         dataset[expanded_columns.columns] = expanded_columns
 
@@ -40,4 +61,6 @@ ms_features["label"] = "Magnetosheath"
 
 combined_features = pd.concat([sw_features, ms_features], ignore_index=True)
 
-combined_features.to_csv("/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv")
+combined_features.to_csv(
+    "/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv"
+)

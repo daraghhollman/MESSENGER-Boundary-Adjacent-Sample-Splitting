@@ -8,21 +8,20 @@ from sklearn.metrics import (ConfusionMatrixDisplay, accuracy_score,
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
-show_plots = False
+show_plots = True
 
 # Load data
 combined_features = pd.read_csv("/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv")
 
-X = combined_features.drop(columns=["label"])  # Features
+X = combined_features.drop(columns=["label", "Sample Start", "Sample End"])  # Features
 
 # Isolate important features
 X = X.drop(
     columns=[
-        "skew Bx",
-        "skew By",
-        "skew Bz",
-        "kurtosis By",
-        "kurtosis Bz",
+        "Mean |B|",
+        "Mean Bx",
+        "Mean By",
+        "Mean Bz",
     ]
 )
 X = X.iloc[:, 1:]  # Remove the index column
@@ -66,9 +65,6 @@ if show_plots:
     cm_display.plot()
     plt.show()
 
-
-print(X_test)
-print(y_test)
 
 if input("Save predictions to csv? [Y/n]\n > ") != "n":
     truths = y_test  # What the correct label is

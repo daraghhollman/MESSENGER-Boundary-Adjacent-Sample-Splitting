@@ -30,7 +30,7 @@ def main():
 
     total_samples = pd.concat((solar_wind_samples, magnetosheath_samples))
 
-    components = ["|B|", "B_x", "B_y", "B_z"]
+    components = ["|B|", "Bx", "By", "Bz"]
     for component in components:
         total_samples[component] = total_samples[component].apply(
             lambda x: list(map(float, x.strip("[]").split(",")))
@@ -42,7 +42,7 @@ def main():
 
     # results = results.loc[ abs(results["P(Solar Wind)"] - results["P(Magnetosheath)"]) <= 0.5 ]
     # results = results.loc[results["Truth"] == "Magnetosheath"]
-    # results = results.loc[results["Truth"] != results["Prediction"]]
+    results = results.loc[results["Truth"] != results["Prediction"]]
 
     for _, row in results.iterrows():
 
@@ -65,21 +65,21 @@ def main():
             lw=2,
         )
         histogram_axis.hist(
-            total_samples.iloc[i]["B_x"],
+            total_samples.iloc[i]["Bx"],
             color=colours[2],
             orientation="horizontal",
             histtype="step",
             lw=2,
         )
         histogram_axis.hist(
-            total_samples.iloc[i]["B_y"],
+            total_samples.iloc[i]["By"],
             color=colours[0],
             orientation="horizontal",
             histtype="step",
             lw=2,
         )
         histogram_axis.hist(
-            total_samples.iloc[i]["B_z"],
+            total_samples.iloc[i]["Bz"],
             color=colours[-1],
             orientation="horizontal",
             histtype="step",
@@ -91,11 +91,11 @@ def main():
         time_buffer = dt.timedelta(minutes=30)
 
         try:
-            sample_start = dt.datetime.strptime(total_samples.iloc[i]["sample_start"], "%Y-%m-%d %H:%M:%S.%f")
-            sample_end = dt.datetime.strptime(total_samples.iloc[i]["sample_end"], "%Y-%m-%d %H:%M:%S.%f")
+            sample_start = dt.datetime.strptime(total_samples.iloc[i]["Sample Start"], "%Y-%m-%d %H:%M:%S.%f")
+            sample_end = dt.datetime.strptime(total_samples.iloc[i]["Sample End"], "%Y-%m-%d %H:%M:%S.%f")
         except:
-            sample_start = dt.datetime.strptime(total_samples.iloc[i]["sample_start"], "%Y-%m-%d %H:%M:%S")
-            sample_end = dt.datetime.strptime(total_samples.iloc[i]["sample_end"], "%Y-%m-%d %H:%M:%S")
+            sample_start = dt.datetime.strptime(total_samples.iloc[i]["Sample Start"], "%Y-%m-%d %H:%M:%S")
+            sample_end = dt.datetime.strptime(total_samples.iloc[i]["Sample End"], "%Y-%m-%d %H:%M:%S")
 
         # Load the new data
         data = mag.Load_Between_Dates(
