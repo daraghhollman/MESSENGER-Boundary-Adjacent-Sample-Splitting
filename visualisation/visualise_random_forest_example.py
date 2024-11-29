@@ -42,7 +42,7 @@ def main():
 
     # results = results.loc[ abs(results["P(Solar Wind)"] - results["P(Magnetosheath)"]) <= 0.5 ]
     # results = results.loc[results["Truth"] == "Magnetosheath"]
-    results = results.loc[results["Truth"] != results["Prediction"]]
+    # results = results.loc[results["Truth"] != results["Prediction"]]
 
     for _, row in results.iterrows():
 
