@@ -9,7 +9,6 @@ import hermpy.plotting_tools as hermplot
 import hermpy.boundary_crossings as boundaries
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import numpy as np
 import pandas as pd
 import spiceypy as spice
 
