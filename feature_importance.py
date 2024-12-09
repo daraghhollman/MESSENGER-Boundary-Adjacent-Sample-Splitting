@@ -15,15 +15,6 @@ combined_features = pd.read_csv("/home/daraghhollman/Main/Work/mercury/DataSets/
 
 X = combined_features.drop(columns=["label", "Sample Start", "Sample End"])  # Features
 
-# Isolate important features
-X = X.drop(
-    columns=[
-        "Mean |B|",
-        "Mean Bx",
-        "Mean By",
-        "Mean Bz",
-    ]
-)
 X = X.iloc[:, 1:]  # Remove the index column
 y = combined_features["label"]  # Target
 
