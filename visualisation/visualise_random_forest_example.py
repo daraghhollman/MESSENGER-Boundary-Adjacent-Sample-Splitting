@@ -14,6 +14,9 @@ import spiceypy as spice
 
 
 def main():
+
+    print_features = True
+
     colours = ["#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000"]
 
     spice.furnsh("/home/daraghhollman/Main/SPICE/messenger/metakernel_messenger.txt")
@@ -25,6 +28,10 @@ def main():
     )
     solar_wind_samples = pd.read_csv(
         "/home/daraghhollman/Main/Work/mercury/DataSets/solar_wind_sample_10_mins.csv"
+    )
+
+    combined_features = pd.read_csv(
+        "/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv"
     )
 
     total_samples = pd.concat((solar_wind_samples, magnetosheath_samples))
@@ -47,6 +54,11 @@ def main():
 
         selected_result = row
         i = row.iloc[0]
+
+        # Get features
+        if print_features:
+            row_features = combined_features.iloc[i]
+            print(row_features)
 
         # We create two axes side-by-side
         # and afterwards, we add an axis below to represent the probability
