@@ -39,12 +39,14 @@ for features_data in [solar_wind_features, magnetosheath_features]:
         for ax, variable in zip(axes, variables_to_plot):
 
             # Remove outliers
+            """
             features_data = features_data[
                 (np.abs(scipy.stats.zscore(features_data[f"{feature} {variable}"])) < 3)
             ]
+            """
             hist_data = features_data[f"{feature} {variable}"]
 
-            bins = np.arange(np.min(hist_data), np.max(hist_data) + bin_size, bin_size)
+            bins = np.arange(np.min(hist_data), np.nanmax(hist_data) + bin_size, bin_size)
 
             ax.hist(hist_data, color="black", bins=bins)
 
