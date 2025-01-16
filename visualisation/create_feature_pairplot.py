@@ -12,8 +12,6 @@ def main():
         "/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv"
     )
 
-    # remove outliers
-
     # We want to plot the misclassified samples' features atop the pairplot
     random_forest_results = pd.read_csv(
         "/home/daraghhollman/Main/Work/mercury/DataSets/random_forest_predictions.csv"
