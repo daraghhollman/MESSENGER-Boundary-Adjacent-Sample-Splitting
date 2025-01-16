@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import pickle
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
@@ -15,24 +16,58 @@ from tqdm import tqdm
 
 def main():
     show_plots = True
+    reduced_features = True
+    save_model = True
 
     # Load data
     combined_features = pd.read_csv(
         "/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv"
     )
 
-    X = combined_features.drop(columns=["label", "Sample Start", "Sample End"])  # Features
+    X = combined_features.drop(
+        columns=["label", "Sample Start", "Sample End"]
+    )  # Features
+
+    if reduced_features:
+        X = X.drop(
+            columns=[
+                "Grazing Angle (deg.)",
+                "Is Inbound?",
+                "Dip Statistic |B|",
+                "Dip Statistic Bx",
+                "Dip Statistic By",
+                "Dip Statistic Bz",
+                "Dip P-Value |B|",
+                "Dip P-Value Bx",
+                "Dip P-Value By",
+                "Dip P-Value Bz",
+            ]
+        )
 
     X = X.iloc[:, 1:]  # Remove the index column
+
+    column_names = list(X.columns.values)
+    column_names.sort()
+    X = X[column_names]
+
     y = combined_features["label"]  # Target
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=0
+    )
 
     if input("Show training spread? [Y/n]\n > ") != "n":
         Show_Training_Spread(X_train)
 
     random_forest = RandomForestClassifier(n_estimators=100, random_state=0)
     random_forest.fit(X_train, y_train)
+
+    if save_model:
+        with open(
+            "/home/daraghhollman/Main/Work/mercury/DataSets/bow_shock_random_forest",
+            "wb",
+        ) as file:
+            pickle.dump(random_forest, file)
 
     if show_plots:
 
@@ -42,6 +77,9 @@ def main():
 
         importances = random_forest.feature_importances_
         feature_names = X.columns
+
+        "Features:"
+        print(feature_names)
 
         # Create a DataFrame for visualization
         feature_importance_df = pd.DataFrame(
@@ -66,7 +104,6 @@ def main():
         )
         cm_display.plot()
         plt.show()
-
 
     if input("Save predictions to csv? [Y/n]\n > ") != "n":
         truths = y_test  # What the correct label is
@@ -94,11 +131,12 @@ def main():
             }
         )
         prediction_data.to_csv(
-            "/home/daraghhollman/Main/Work/mercury/DataSets/random_forest_predictions.csv"
+            "/home/daraghhollman/Main/Work/mercury/DataSets/random_forest_predictions_reduced.csv"
         )
 
 
 # Visualisation functions
+
 
 def Show_Training_Spread(training_data):
     """A function to check if the training data is disperse spatially.
@@ -128,7 +166,6 @@ def Show_Training_Spread(training_data):
         ax.margins(0)
 
         plt.show()
-
 
 
 if __name__ == "__main__":
