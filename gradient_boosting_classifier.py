@@ -18,11 +18,15 @@ def main():
     show_plots = True
     reduced_features = True
     save_model = True
+    drop_nan = True
 
     # Load data
     combined_features = pd.read_csv(
         "/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv"
     )
+
+    if drop_nan:
+        combined_features = combined_features.dropna()
 
     X = combined_features.drop(columns=["label", "Sample Start", "Sample End"])  # Features
 
@@ -93,11 +97,11 @@ def main():
             sample = X_test.iloc[i].to_frame().T
 
             prediction = model.predict(sample)[0]
-            probabilities = model.predict_proba(sample)
+            probabilities = model.predict_proba(sample)[0]
 
             predictions.append(prediction)
-            sheath_probability.append(probabilities[0][0])
-            solar_wind_probability.append(probabilities[0][1])
+            sheath_probability.append(probabilities[0])
+            solar_wind_probability.append(probabilities[1])
 
         prediction_data = pd.DataFrame(
             {
@@ -108,7 +112,7 @@ def main():
             }
         )
         prediction_data.to_csv(
-            "/home/daraghhollman/Main/Work/mercury/DataSets/gradient_boosting_predictions_reduced.csv"
+            "/home/daraghhollman/Main/Work/mercury/DataSets/gradient_boosting_predictions_reduced_dropna.csv"
         )
 
 

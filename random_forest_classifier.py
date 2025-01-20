@@ -16,13 +16,17 @@ from tqdm import tqdm
 
 def main():
     show_plots = True
-    reduced_features = True
-    save_model = True
+    reduced_features = False
+    save_model = False
+    drop_nan = False
 
     # Load data
     combined_features = pd.read_csv(
         "/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv"
     )
+
+    if drop_nan:
+        combined_features = combined_features.dropna()
 
     X = combined_features.drop(
         columns=["label", "Sample Start", "Sample End"]
@@ -59,7 +63,7 @@ def main():
     if input("Show training spread? [Y/n]\n > ") != "n":
         Show_Training_Spread(X_train)
 
-    random_forest = RandomForestClassifier(n_estimators=100, random_state=0)
+    random_forest = RandomForestClassifier(n_estimators=100, max_features=None, random_state=0)
     random_forest.fit(X_train, y_train)
 
     if save_model:
@@ -131,7 +135,7 @@ def main():
             }
         )
         prediction_data.to_csv(
-            "/home/daraghhollman/Main/Work/mercury/DataSets/random_forest_predictions_reduced.csv"
+            "/home/daraghhollman/Main/Work/mercury/DataSets/random_forest_predictions_n1000.csv"
         )
 
 

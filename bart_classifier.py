@@ -54,6 +54,9 @@ def main():
     column_names.sort()
     X = X[column_names]
 
+    _, _, _, y_test_with_labels = train_test_split(
+        X, combined_features["label"], test_size=0.2, random_state=0
+    )
     y = pd.Categorical(combined_features["label"]).codes  # Target
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -84,15 +87,16 @@ def main():
         )
         pp_test = pm.sample_posterior_predictive(idata, return_inferencedata=True)
 
-
     # Average accross chains and draws
     # The result is an array with elements between 0 to 1. With 0 corresponding to magnetosheath,
     # and 1 to solar wind. These can be remapped to a 'probability score' between 0 and 1 for each
     # region.
-    predictions = np.mean(np.mean(pp_test.posterior_predictive.y.to_numpy(), axis=0), axis=0)
-    solar_wind_probability = 1 - predictions
-    magnetosheath_probability = predictions
-    
+    predictions = np.mean(
+        np.mean(pp_test.posterior_predictive.y.to_numpy(), axis=0), axis=0
+    )
+    solar_wind_probability = predictions
+    magnetosheath_probability = 1 - predictions
+
     # Get Accuracy
     accuracy = (np.round(predictions) == y_test).sum() / len(y_test)
 
@@ -100,12 +104,13 @@ def main():
 
     # Save to csv
     if input("Save predictions to csv? [Y/n]\n > ") != "n":
-        prediction_labels = np.where(np.round(predictions) == 1, "Magnetosheath", "Solar Wind")
-
+        prediction_labels = np.where(
+            np.round(predictions) == 1, "Solar Wind", "Magnetosheath"
+        )
 
         prediction_data = pd.DataFrame(
             {
-                "Truth": combined_features["label"],
+                "Truth": y_test_with_labels,
                 "Prediction": prediction_labels,
                 "P(Magnetosheath)": magnetosheath_probability,
                 "P(Solar Wind)": solar_wind_probability,
@@ -114,6 +119,7 @@ def main():
         prediction_data.to_csv(
             "/home/daraghhollman/Main/Work/mercury/DataSets/bart_predictions.csv"
         )
+
 
 # Visualisation functions
 
@@ -146,6 +152,7 @@ def Show_Training_Spread(training_data):
         ax.margins(0)
 
         plt.show()
+
 
 if __name__ == "__main__":
     main()
