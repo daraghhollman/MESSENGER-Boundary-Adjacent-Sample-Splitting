@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 from matplotlib.widgets import Button
 import pandas as pd
-from hermpy import mag, fips, boundaries, utils, plotting
+from hermpy import mag, fips, boundaries, utils, plotting, trajectory
+from pandas.core.arrays import arrow
 
 output_csv = "/home/daraghhollman/Main/Work/mercury/DataSets/manually_classified_random_forest_misclassifications.csv"
 
@@ -74,17 +75,14 @@ def Update_Plot(axes, index):
 
     # Remove any existing colorbar from the axis
     try:
-        print(fig.axes)
         for axis in fig.axes:
             if "Proton" in axis.get_xlabel():
                 fig.delaxes(axis)
-        print(fig.axes)
     except IndexError:
         pass
 
     fips_ax_divider = make_axes_locatable(fips_axis)
     fips_cax = fips_ax_divider.append_axes("top", size="3%", pad="2%")
-
 
     start = sample_times.iloc[index]["Sample Start"]
     end = sample_times.iloc[index]["Sample End"]
@@ -176,6 +174,86 @@ def Update_Plot(axes, index):
     plt.draw()
 
 
+def Open_Trajectory(_):
+    print("Opening Trajectoy")
+    global current_index
+
+    # Get start and stop time for this index
+    sample_start = sample_times.iloc[current_index]["Sample Start"]
+    sample_end = sample_times.iloc[current_index]["Sample End"]
+    time_buffer = dt.timedelta(hours=4)
+
+    search_start = sample_start - time_buffer
+    search_end = sample_end + time_buffer
+
+    all_positions = messenger_data.loc[
+        messenger_data["date"].between(search_start, search_end)
+    ][["X MSM' (radii)", "Y MSM' (radii)", "Z MSM' (radii)"]]
+
+    sample_positions = messenger_data.loc[
+        messenger_data["date"].between(sample_start, sample_end)
+    ][["X MSM' (radii)", "Y MSM' (radii)", "Z MSM' (radii)"]]
+
+    # Create new plotting window
+    fig, ax = plt.subplots()
+
+    ax.plot(
+        all_positions["X MSM' (radii)"],
+        np.sqrt(
+            all_positions["Y MSM' (radii)"] ** 2 + all_positions["Z MSM' (radii)"] ** 2
+        ),
+        color="grey",
+        zorder=1,
+    )
+    ax.plot(
+        sample_positions["X MSM' (radii)"],
+        np.sqrt(
+            sample_positions["Y MSM' (radii)"] ** 2
+            + sample_positions["Z MSM' (radii)"] ** 2
+        ),
+        color="black",
+        lw=5,
+        zorder=2,
+    )
+
+    final_position = sample_positions.iloc[-1]
+    previous_position = sample_positions.iloc[-2]
+
+    arrow_direction = [
+        final_position["X MSM' (radii)"] - previous_position["X MSM' (radii)"],
+        np.sqrt(
+            final_position["Y MSM' (radii)"] ** 2
+            + final_position["Z MSM' (radii)"] ** 2
+        )
+        - np.sqrt(
+            previous_position["Y MSM' (radii)"] ** 2
+            + previous_position["Z MSM' (radii)"] ** 2
+        ),
+    ]
+    arrow_direction /= np.linalg.norm(arrow_direction)
+    arrow_length = 0.1
+    ax.arrow(
+        final_position["X MSM' (radii)"],
+        np.sqrt(
+            final_position["Y MSM' (radii)"] ** 2
+            + final_position["Z MSM' (radii)"] ** 2
+        ),
+        arrow_length * arrow_direction[0],
+        arrow_length * arrow_direction[1],
+        width=0.01,
+        head_width=0.2,
+        head_length=0.2,
+        ec="black",
+        fc="black",
+        zorder=5,
+    )
+
+    plotting.Format_Cylindrical_Plot(ax, 4)
+    plotting.Plot_Magnetospheric_Boundaries(ax)
+
+    plt.show()
+
+
 # Event handlers for button clicks
 def Classify(label):
     global current_index
@@ -192,7 +270,7 @@ def Classify(label):
 # Set up the plot
 fig, axes = plt.subplots(2, 1, sharex=True)
 (mag_axis, fips_axis) = axes
-plt.subplots_adjust(bottom=0.3)
+plt.subplots_adjust(bottom=0.3, hspace=0.3)
 
 Update_Plot(axes, current_index)
 
@@ -216,5 +294,9 @@ for i, label in enumerate(labels):
     button = Button(ax_button, label)
     button.on_clicked(lambda _, lbl=label: Classify(lbl))
     buttons.append(button)
+
+trajectory_button_ax = plt.axes([0.8, 0.9, button_length, 0.075])
+trajectory_button = Button(trajectory_button_ax, "Open Trajectory")
+trajectory_button.on_clicked(Open_Trajectory)
 
 plt.show()
