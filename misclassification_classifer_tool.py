@@ -10,8 +10,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 from matplotlib.widgets import Button
 import pandas as pd
-from hermpy import mag, fips, boundaries, utils, plotting, trajectory
-from pandas.core.arrays import arrow
+from hermpy import mag, fips, boundaries, utils, plotting
 
 output_csv = "/home/daraghhollman/Main/Work/mercury/DataSets/manually_classified_random_forest_misclassifications.csv"
 
@@ -29,6 +28,12 @@ random_forest_predictions = pd.read_csv(
 )
 features_dataset = pd.read_csv(
     "/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv"
+)
+
+# Load ICMEs csv
+icmes = pd.read_csv(
+    "/home/daraghhollman/Main/Work/mercury/DataSets/MESSENGER_ICME_Dates_Winslow.csv",
+    parse_dates=["icme_start", "icme_end"],
 )
 
 # Load Philpott Crossings
@@ -64,7 +69,7 @@ def Save_Classification(index, label):
     with open(output_csv, "a", newline="") as f:
         writer = csv.writer(f)
         writer.writerow([index, label])
-    print(f"Row {index} classified as '{label}'.")
+    print(f"Misclassification {index + 1} classified as '{label}'.")
 
 
 # Function to update the plot
@@ -81,6 +86,11 @@ def Update_Plot(axes, index):
     except IndexError:
         pass
 
+    # Remove any existing ICME flags
+    for text in fig.texts:
+        if "ICME" in text.get_text():
+            text.remove()
+
     fips_ax_divider = make_axes_locatable(fips_axis)
     fips_cax = fips_ax_divider.append_axes("top", size="3%", pad="2%")
 
@@ -88,11 +98,32 @@ def Update_Plot(axes, index):
     end = sample_times.iloc[index]["Sample End"]
     time_buffer = dt.timedelta(hours=2)
 
+    # Check if sample within an ICME window
+    sample_is_in_icme = False
+    icme_start = ""
+    icme_end = ""
+    for _, row in icmes.iterrows():
+        if (start > row["icme_start"] and start < row["icme_end"]) or (
+            end < row["icme_end"] and end > row["icme_start"]
+        ):
+            sample_is_in_icme = True
+            icme_start = row["icme_start"]
+            icme_end = row["icme_end"]
+            break
+
+        else:
+            continue
+
     for ax in axes:
         # First we need to clear what was there before
         ax.clear()
         ax.set_xlim(start - time_buffer / 4, end + time_buffer / 4)
         ax.margins(0)
+
+    if sample_is_in_icme:
+        fig.text(
+            0.03, 0.92, f"Sample is within ICME\nStarting: {icme_start}, Ending: {icme_end}"
+        )
 
     # Load data
     mag_data = messenger_data.loc[
@@ -105,7 +136,14 @@ def Update_Plot(axes, index):
         strip=True,
     )
     fips_protons = np.transpose(fips_data["proton_energies"])
-    fips_protons = np.delete(fips_protons, -1, 1)
+
+    try:
+        fips_protons = np.delete(fips_protons, -1, 1)
+        plot_fips = True
+    except:
+        print("Warning: No FIPS data")
+        plot_fips = False
+
     fips_calibration = fips.Get_Calibration()
 
     if len(mag_data) == 0 or len(fips_data) == 0:
@@ -136,19 +174,23 @@ def Update_Plot(axes, index):
 
     plotting.Add_Tick_Ephemeris(fips_axis)
 
-    protons_mesh = fips_axis.pcolormesh(
-        fips_data["dates"], fips_calibration, fips_protons, norm="log", cmap="plasma"
-    )
+    if plot_fips:
+        protons_mesh = fips_axis.pcolormesh(
+            fips_data["dates"], fips_calibration, fips_protons, norm="log", cmap="plasma"
+        )
 
-    colorbar_label = "Diff. Energy Flux [(keV/e)$^{-1}$ sec$^{-1}$ cm$^{-2}$]"
+        colorbar_label = "Diff. Energy Flux [(keV/e)$^{-1}$ sec$^{-1}$ cm$^{-2}$]"
 
-    plt.colorbar(
-        protons_mesh,
-        cax=fips_cax,
-        label="Proton " + colorbar_label,
-        orientation="horizontal",
-        location="top",
-    )
+        plt.colorbar(
+            protons_mesh,
+            cax=fips_cax,
+            label="Proton " + colorbar_label,
+            orientation="horizontal",
+            location="top",
+        )
+
+    else:
+        fips_cax.remove()
 
     fips_axis.set_ylabel("Energy [keV]")
 
