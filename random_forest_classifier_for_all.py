@@ -5,22 +5,12 @@ Perform random forest classification for all samples
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import random
-import pickle
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    ConfusionMatrixDisplay,
-    accuracy_score,
-    classification_report,
-    confusion_matrix,
-)
-from sklearn.model_selection import train_test_split
-from tqdm import tqdm
-
+from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
 
 def main():
-    reduced_features = True
+    model_function = HistGradientBoostingClassifier
+    reduced_features = False
     show_plots = True
     save_model = False
 
@@ -70,14 +60,14 @@ def main():
         X_train = X.drop(group)
         y_train = y.drop(group)
 
-        random_forest = RandomForestClassifier(n_estimators=100, random_state=0)
-        random_forest.fit(X_train, y_train)
+        model = model_function()
+        model.fit(X_train, y_train)
 
         # Assign to dataframe
         truths = y_test  # What the correct label is
-        predictions = random_forest.predict(X_test)  # What the random forest predicted
+        predictions = model.predict(X_test)  # What the random forest predicted
         magnetosheath_probabilities, solar_wind_probabilities = (
-            random_forest.predict_proba(X_test).T
+            model.predict_proba(X_test).T
         )
 
         prediction_data = pd.DataFrame(
@@ -97,7 +87,7 @@ def main():
         
     if input("Save predictions to csv? [Y/n]\n > ") != "n":
         all_predictions.to_csv(
-            "/home/daraghhollman/Main/Work/mercury/DataSets/random_forest_predictions_all_data.csv"
+            "/home/daraghhollman/Main/Work/mercury/DataSets/gradient_bossting_predictions_all_data.csv"
         )
 
 

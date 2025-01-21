@@ -1,5 +1,6 @@
+import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split, GridSearchCV
 
@@ -29,13 +30,24 @@ rf_params = {
     "min_samples_leaf": [1, 2, 4],
     "max_features": ["auto", "sqrt", "log2"],
 }
+gb_params = {
+    "loss": ["log_loss", "exponential"],
+    "learning_rate": [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2],
+    "min_samples_split": np.linspace(0.1, 0.5, 12),
+    "min_samples_leaf": np.linspace(0.1, 0.5, 12),
+    "max_depth": [3, 5, 8],
+    "max_features": ["log2", "sqrt"],
+    "criterion": ["friedman_mse", "squared_error"],
+    "subsample": [0.5, 0.618, 0.8, 0.85, 0.9, 0.95, 1.0],
+    "n_estimators": [10],
+}
 
 
 # Perform Grid Search for Random Forest
 rf_grid_search = GridSearchCV(
-    estimator=RandomForestClassifier(random_state=0),
+    estimator=GradientBoostingClassifier(random_state=0),
     n_jobs=20,
-    param_grid=rf_params,
+    param_grid=gb_params,
     cv=5,
 )
 rf_grid_search.fit(X_train, y_train)
