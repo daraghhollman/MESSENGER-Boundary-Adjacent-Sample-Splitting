@@ -15,38 +15,62 @@ from tqdm import tqdm
 
 
 def main():
-    show_plots = True
-    reduced_features = False
-    save_model = False
+    show_training_spread = False
+    show_plots = False
+    save_model = True
+    include_random = False
+
+    reduced_features = True # We drop some features which are unimportant / can't calculate without information of the crossing
     drop_nan = False
+    no_ephemeris = False
 
     # Load data
     combined_features = pd.read_csv(
-        "/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv"
+        "/home/daraghhollman/Main/Work/mercury/DataSets/magnetopause/combined_features.csv"
     )
 
     if drop_nan:
         combined_features = combined_features.dropna()
 
-    X = combined_features.drop(
-        columns=["label", "Sample Start", "Sample End"]
-    )  # Features
+    X = combined_features.drop(columns=["label", "Sample Start", "Sample End"])  # Features
 
     if reduced_features:
-        X = X.drop(
-            columns=[
-                "Grazing Angle (deg.)",
-                "Is Inbound?",
-                "Dip Statistic |B|",
-                "Dip Statistic Bx",
-                "Dip Statistic By",
-                "Dip Statistic Bz",
-                "Dip P-Value |B|",
-                "Dip P-Value Bx",
-                "Dip P-Value By",
-                "Dip P-Value Bz",
-            ]
-        )
+        X = X.drop(columns=[
+            "Grazing Angle (deg.)",
+            "Is Inbound?",
+        ])
+
+    # Add random feature for importance comparison
+    if include_random:
+        X["Random"] = np.random.normal(size=len(X))
+
+    # Test dropping other features
+    # Remove all poor features
+    """
+    X = X.drop(columns=[
+        "Dip Statistic Bx",
+        "Dip Statistic By",
+        "Dip Statistic Bz",
+        "Dip Statistic |B|",
+        "Kurtosis Bx",
+        "Skew Bz",
+        "Skew By",
+        "Kurtosis |B|",
+    ])
+    """
+
+    if no_ephemeris:
+        X = X.drop(columns=[
+            "X MSM' (radii)",
+            "Y MSM' (radii)",
+            "Z MSM' (radii)",
+            "Latitude (deg.)",
+            "Magnetic Latitude (deg.)",
+            "Local Time (hrs)",
+        ])
+
+        print(X.columns)
+
 
     X = X.iloc[:, 1:]  # Remove the index column
 
@@ -60,15 +84,15 @@ def main():
         X, y, test_size=0.2, random_state=0
     )
 
-    if input("Show training spread? [Y/n]\n > ") != "n":
+    if show_training_spread:
         Show_Training_Spread(X_train)
 
-    random_forest = RandomForestClassifier(n_estimators=100, max_features=None, random_state=0)
+    random_forest = RandomForestClassifier(n_estimators=100)
     random_forest.fit(X_train, y_train)
 
     if save_model:
         with open(
-            "/home/daraghhollman/Main/Work/mercury/DataSets/bow_shock_random_forest",
+            "/home/daraghhollman/Main/Work/mercury/DataSets/magnetopause_random_forest",
             "wb",
         ) as file:
             pickle.dump(random_forest, file)
@@ -135,7 +159,7 @@ def main():
             }
         )
         prediction_data.to_csv(
-            "/home/daraghhollman/Main/Work/mercury/DataSets/random_forest_predictions_n1000.csv"
+            "/home/daraghhollman/Main/Work/mercury/DataSets/random_forest_predictions_test001.csv"
         )
 
 

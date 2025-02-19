@@ -12,7 +12,7 @@ from matplotlib.widgets import Button
 import pandas as pd
 from hermpy import mag, fips, boundaries, utils, plotting
 
-output_csv = "/home/daraghhollman/Main/Work/mercury/DataSets/manually_classified_random_forest_misclassifications.csv"
+output_csv = "/home/daraghhollman/Main/Work/mercury/DataSets/manually_classified_model_misclassifications.csv"
 
 # If the file doesn't exist, create it
 if not os.path.exists(output_csv):
@@ -24,7 +24,7 @@ if not os.path.exists(output_csv):
 
 # Load the CSV data
 random_forest_predictions = pd.read_csv(
-    "/home/daraghhollman/Main/Work/mercury/DataSets/random_forest_predictions_all_data.csv"
+    "/home/daraghhollman/Main/Work/mercury/DataSets/gradient_bossting_predictions_all_data.csv"
 )
 features_dataset = pd.read_csv(
     "/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv"
@@ -42,6 +42,7 @@ crossings = boundaries.Load_Crossings(utils.User.CROSSING_LISTS["Philpott"])
 misclassifications = random_forest_predictions.loc[
     random_forest_predictions["Truth"] != random_forest_predictions["Prediction"]
 ]
+print(f"{len(misclassifications)} misclassifications")
 features_dataset = features_dataset.iloc[misclassifications.iloc[:, 0]]
 
 # Load the entire mission
@@ -122,7 +123,9 @@ def Update_Plot(axes, index):
 
     if sample_is_in_icme:
         fig.text(
-            0.03, 0.92, f"Sample is within ICME\nStarting: {icme_start}, Ending: {icme_end}"
+            0.03,
+            0.92,
+            f"Sample is within ICME\nStarting: {icme_start}, Ending: {icme_end}",
         )
 
     # Load data
@@ -145,6 +148,7 @@ def Update_Plot(axes, index):
         plot_fips = False
 
     fips_calibration = fips.Get_Calibration()
+    fips_axis.set_yscale("log")
 
     if len(mag_data) == 0 or len(fips_data) == 0:
         raise ValueError(f"No data for sample at row {index}!")
@@ -176,7 +180,11 @@ def Update_Plot(axes, index):
 
     if plot_fips:
         protons_mesh = fips_axis.pcolormesh(
-            fips_data["dates"], fips_calibration, fips_protons, norm="log", cmap="plasma"
+            fips_data["dates"],
+            fips_calibration,
+            fips_protons,
+            norm="log",
+            cmap="plasma",
         )
 
         colorbar_label = "Diff. Energy Flux [(keV/e)$^{-1}$ sec$^{-1}$ cm$^{-2}$]"

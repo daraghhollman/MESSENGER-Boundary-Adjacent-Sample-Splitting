@@ -4,7 +4,7 @@ We are testing multiple models on the same training and test data. We want a way
 
 import pandas as pd
 
-bart = True
+bart = False
 
 # Load outputs
 directory = "/home/daraghhollman/Main/Work/mercury/DataSets/"
@@ -15,10 +15,11 @@ if bart:
     gradient_boosting_predictions = pd.read_csv(directory + "gradient_boosting_predictions_reduced_dropna.csv")
 
 else:
-    random_forest_predictions = pd.read_csv(directory + "random_forest_predictions_reduced.csv")
+    random_forest_predictions_1 = pd.read_csv(directory + "random_forest_predictions_test002.csv")
+    random_forest_predictions_2 = pd.read_csv(directory + "random_forest_predictions_test001.csv")
     gradient_boosting_predictions = pd.read_csv(directory + "gradient_boosting_predictions_reduced.csv")
 
-pair = [random_forest_predictions, bart_predictions]
+pair = [random_forest_predictions_1, random_forest_predictions_2]
 # matching_rows = random_forest_predictions["Prediction"] == gradient_boosting_predictions["Prediction"]
 matching_rows = pair[0]["Prediction"] == pair[1]["Prediction"]
 

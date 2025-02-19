@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import pickle
-from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
     accuracy_score,
@@ -15,14 +15,19 @@ from tqdm import tqdm
 
 
 def main():
+
+    show_training_spread = False
     show_plots = True
-    reduced_features = True
     save_model = True
-    drop_nan = True
+    include_random = True
+
+    reduced_features = True # We drop some features which are unimportant / can't calculate without information of the crossing
+    drop_nan = False
+    no_ephemeris = False
 
     # Load data
     combined_features = pd.read_csv(
-        "/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv"
+        "/home/daraghhollman/Main/Work/mercury/DataSets/magnetopause/combined_features.csv"
     )
 
     if drop_nan:
@@ -34,15 +39,38 @@ def main():
         X = X.drop(columns=[
             "Grazing Angle (deg.)",
             "Is Inbound?",
-            "Dip Statistic |B|",
-            "Dip Statistic Bx",
-            "Dip Statistic By",
-            "Dip Statistic Bz",
-            "Dip P-Value |B|",
-            "Dip P-Value Bx",
-            "Dip P-Value By",
-            "Dip P-Value Bz",
         ])
+
+    # Add random feature for importance comparison
+    if include_random:
+        X["Random"] = np.random.normal(size=len(X))
+
+    # Test dropping other features
+    # Remove all poor features
+    """
+    X = X.drop(columns=[
+        "Dip Statistic Bx",
+        "Dip Statistic By",
+        "Dip Statistic Bz",
+        "Dip Statistic |B|",
+        "Kurtosis Bx",
+        "Skew Bz",
+        "Skew By",
+        "Kurtosis |B|",
+    ])
+    """
+
+    if no_ephemeris:
+        X = X.drop(columns=[
+            "X MSM' (radii)",
+            "Y MSM' (radii)",
+            "Z MSM' (radii)",
+            "Latitude (deg.)",
+            "Magnetic Latitude (deg.)",
+            "Local Time (hrs)",
+        ])
+
+        print(X.columns)
 
 
     X = X.iloc[:, 1:]  # Remove the index column
@@ -53,18 +81,14 @@ def main():
 
     y = combined_features["label"]  # Target
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-    if input("Show training spread? [Y/n]\n > ") != "n":
+    if show_training_spread:
         Show_Training_Spread(X_train)
 
-    model = HistGradientBoostingClassifier(random_state=0)
+    model = GradientBoostingClassifier()
     model.fit(X_train, y_train)
     
-    if save_model:
-        with open("/home/daraghhollman/Main/Work/mercury/DataSets/bow_shock_gradient_boosting", "wb") as file:
-            pickle.dump(model, file)
-
     if show_plots:
 
         y_pred = model.predict(X_test)
@@ -80,10 +104,31 @@ def main():
         print(classification_report(y_test, y_pred))
 
         cm_display = ConfusionMatrixDisplay(
-            cm, display_labels=["Magnetosheath", "Solar Wind"]
+            cm, display_labels=["Magnetosheath", "Magnetosphere"]
         )
         cm_display.plot()
         plt.show()
+
+        importances = model.feature_importances_
+        feature_names = X.columns
+
+        "Features:"
+        print(feature_names)
+
+        # Create a DataFrame for visualization
+        feature_importance_df = pd.DataFrame(
+            {"Feature": feature_names, "Importance": importances}
+        ).sort_values(by="Importance", ascending=False)
+
+        plt.figure(figsize=(10, 6))
+        sns.barplot(x="Importance", y="Feature", data=feature_importance_df)
+        plt.title("Feature Importance")
+        plt.show()
+
+    if save_model:
+        with open("/home/daraghhollman/Main/Work/mercury/DataSets/" + input("Save model as: "), "wb") as file:
+            pickle.dump(model, file)
+
 
 
     if input("Save predictions to csv? [Y/n]\n > ") != "n":
@@ -108,7 +153,7 @@ def main():
                 "Truth": truths,
                 "Prediction": predictions,
                 "P(Magnetosheath)": sheath_probability,
-                "P(Solar Wind)": solar_wind_probability,
+                "P(Magnetosphere)": solar_wind_probability,
             }
         )
         prediction_data.to_csv(

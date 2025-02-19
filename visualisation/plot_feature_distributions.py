@@ -9,15 +9,24 @@ import numpy as np
 import pandas as pd
 import scipy.stats
 
+boundary = input("Boundary: (bow_shock, magnetopause)\n> ")
+
 # Load data set
 combined_features = pd.read_csv(
-    "/home/daraghhollman/Main/Work/mercury/DataSets/combined_features.csv"
+    f"/home/daraghhollman/Main/Work/mercury/DataSets/{boundary}/combined_features.csv"
 )
 
-solar_wind_features = combined_features.loc[combined_features["label"] == "Solar Wind"]
-magnetosheath_features = combined_features.loc[
-    combined_features["label"] == "Magnetosheath"
-]
+if boundary == "bow_shock":
+    features_a = combined_features.loc[combined_features["label"] == "Solar Wind"]
+    features_b = combined_features.loc[
+        combined_features["label"] == "Magnetosheath"
+    ]
+
+else:
+    features_a = combined_features.loc[combined_features["label"] == "Magnetosphere"]
+    features_b = combined_features.loc[
+        combined_features["label"] == "Magnetosheath"
+    ]
 
 features_to_plot = [
     "Mean",
@@ -30,7 +39,7 @@ bin_sizes = [5, 5, 0.5, 0.5, 0.5]
 variables_to_plot = ["|B|", "Bx", "By", "Bz"]
 
 # Perform the code twice
-for features_data in [solar_wind_features, magnetosheath_features]:
+for features_data in [features_a, features_b]:
 
     for feature, bin_size in zip(features_to_plot, bin_sizes):
 

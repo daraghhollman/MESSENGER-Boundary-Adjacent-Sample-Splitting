@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 
 def main():
-    reduced_features = False
+    reduced_features = True
 
     # Load data
     combined_features = pd.read_csv(
@@ -55,12 +55,12 @@ def main():
     X = X[column_names]
 
     _, _, _, y_test_with_labels = train_test_split(
-        X, combined_features["label"], test_size=0.2, random_state=0
+        X, combined_features["label"], test_size=0.2, random_state=1
     )
     y = pd.Categorical(combined_features["label"]).codes  # Target
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=0
+        X, y, test_size=0.2, random_state=1
     )
     _, regions = pd.factorize(y, sort=True)
 
@@ -70,7 +70,7 @@ def main():
         X_data = pm.Data("X_data", X_train)
         y_data = pm.Data("y_data", y_train)
 
-        mu = pmb.BART("mu", X_data, y_train, m=50, dims=["regions", "n_obs"])
+        mu = pmb.BART("mu", X_data, y_train, m=20, dims=["regions", "n_obs"])
         softmax = pm.Deterministic(
             "softmax", pm.math.softmax(mu, axis=0)
         )  # use softmax to restrict mu between 0 and 1
